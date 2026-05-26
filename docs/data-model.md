@@ -8,10 +8,12 @@
 
 - 대기 상태는 사람 수가 아니라 구간형 상태로 저장합니다.
 - 사용자 제보 원본과 현재 화면에 노출할 최신 상태를 구분합니다.
-- 총 기기 수와 가동 기기 수는 관리자 승인된 값만 기준 정보로 사용합니다.
+- 전체 기체 수와 대기열 추적 대상 기체 수는 관리자 승인된 값만 기준 정보로 사용합니다.
+- 대기열과 체감 혼잡도에는 최신 온라인 업데이트가 유지되는 현역 기체만 포함하며, 구버전·업데이트 중단·오프라인 기체는 제외합니다.
 - 증거 사진이 필요한 변경 제보와 즉시 반영되는 대기 상태 제보를 분리합니다.
 - 체감 혼잡도는 저장 가능한 입력 데이터에서 계산되는 파생값으로 취급합니다.
 - 악성 사용 대응을 위해 제보 작성자와 시각을 추적할 수 있어야 합니다.
+- 화면 설계 단계에서는 `src/data/alphaStores.ts`의 정적 데이터 구조로 동일한 필드를 먼저 표현합니다.
 
 ## 3. 핵심 엔터티
 
@@ -50,21 +52,36 @@
 | `name` | 표시 이름 |
 | `series` | BEMANI 등 계열 구분 |
 | `model` | 발키리 모델 등 구체 모델이 필요한 경우의 값 |
-| `online_service_status` | 최신 온라인 가동 여부 검수에 활용할 상태 |
+| `online_service_status` | `CURRENT_ONLINE`, `LEGACY_OR_ENDED`, `OFFLINE` 등 추적 대상 여부 검수에 활용할 상태 |
 
 ### `StoreGame`
 
-특정 점포에서 제공하는 기종과 검수된 기기 수를 나타냅니다. 대기 상태 제보의 대상 단위입니다.
+특정 점포에서 제공하는 기종과 검수된 기체 수를 나타냅니다. 최신 온라인 추적 대상 기체가 존재할 때 대기 상태 제보의 대상 단위가 됩니다.
 
 | 필드 | 설명 |
 | --- | --- |
 | `id` | 점포-기종 식별자 |
 | `store_id` | 점포 참조 |
 | `game_title_id` | 기종 참조 |
-| `total_machine_count` | 관리자 승인된 총 기기 수 |
-| `operational_machine_count` | 관리자 승인된 가동 기기 수 |
-| `machine_count_reviewed_at` | 기기 수 최근 승인 시각 |
+| `total_machine_count` | 물리적으로 존재하는 관리자 승인 전체 기체 수 |
+| `tracked_machine_count` | 최신 온라인 업데이트가 유지되고 대기열 추적 대상인 기체 수 |
+| `active_tracked_machine_count` | 현재 가동 중인 최신 온라인 추적 대상 기체 수 |
+| `legacy_machine_count` | 구버전 또는 업데이트 중단으로 계산에서 제외하는 기체 수 |
+| `machine_count_reviewed_at` | 기체 수 최근 승인 시각 |
 | `status` | 제보 허용 여부를 포함한 운영 상태 |
+
+오프라인 기체는 `total_machine_count`에는 포함할 수 있으나 `tracked_machine_count`와 `active_tracked_machine_count`에는 포함하지 않습니다. 구버전 또는 업데이트 중단 기체가 최신 기체와 혼재하면 `legacy_machine_count`와 화면의 `notes`에 참고 정보로 기록합니다.
+
+### `AlphaStore` / `AlphaGame`
+
+화면 프로토타입에서 바로 읽을 수 있는 정적 데이터 표현입니다. 실제 저장 모델을 대체하지 않으며, 검수 전 기종을 추정하여 추가하지 않습니다.
+
+| 타입 | 필드 |
+| --- | --- |
+| `AlphaStore` | `id`, `name`, `region`, `area`, `status`, `notes`, `games` |
+| `AlphaGame` | `title`, `totalMachineCount`, `trackedMachineCount`, `activeTrackedMachineCount`, `legacyMachineCount`, `queueLevel`, `lastReportedAt`, `lastVerifiedAt` |
+
+초기 `alphaStores` 데이터는 점포 6곳만 포함하며, 기종 검수 전에는 각 점포의 `games`를 빈 배열로 유지합니다.
 
 ### `WaitReport`
 
@@ -75,12 +92,12 @@
 | `id` | 제보 식별자 |
 | `store_game_id` | 제보 대상 점포-기종 |
 | `reporter_user_id` | 작성 이용자 |
-| `wait_status` | `NONE`, `SHORT`, `MEDIUM`, `LONG` |
+| `queue_level` | `EMPTY`, `IN_USE_NO_QUEUE`, `LOW`, `MEDIUM`, `HIGH`, `VERY_HIGH`, `UNKNOWN` |
 | `created_at` | 제보 시각 |
 | `expires_at` | 최신 상태로 인정되는 만료 시각 |
 | `moderation_status` | 운영 검토가 필요한 경우의 상태 |
 
-`UNKNOWN`은 이용자가 제보하는 값이 아니라, 유효한 최신 `WaitReport`가 없을 때 화면에서 표시하는 상태로 다루는 방안을 우선 제안합니다.
+`UNKNOWN`은 정적 화면 데이터와 최신 상태 표시에서 사용할 수 있습니다. 추후 실제 제보 입력 화면에서 이용자가 직접 선택할 수 있게 할지는 정책 확정 시 결정합니다.
 
 ### `MachineChangeReport`
 
@@ -93,22 +110,37 @@
 | `reporter_user_id` | 작성 이용자 |
 | `change_type` | `BROKEN`, `REPAIRED`, `ADDED`, `REMOVED`, `OTHER` |
 | `description` | 제보 설명 |
-| `evidence_photo` | 증거 사진 참조 |
+| `evidence_photos` | 하나 이상의 `EvidencePhoto` 참조 |
 | `review_status` | `PENDING`, `APPROVED`, `REJECTED` |
 | `reviewed_by` | 처리 관리자 |
 | `reviewed_at` | 처리 시각 |
 | `created_at` | 접수 시각 |
 
+### `EvidencePhoto`
+
+기기 정보 변경 제보에 첨부되는 검수 자료입니다. 사진 자체의 저장 방식은 정하지 않되, 보관과 삭제 정책을 적용할 수 있는 별도 개념으로 둡니다.
+
+| 필드 | 설명 |
+| --- | --- |
+| `id` | 사진 식별자 |
+| `uploader_user_id` | 업로드 이용자 |
+| `storage_reference` | 저장소 내 파일 참조 |
+| `created_at` | 업로드 시각 |
+| `retention_until` | 보관 만료 시각 |
+| `privacy_review_status` | 개인정보 노출 검토 상태 |
+
 ### `MachineCountRevision`
 
-관리자가 승인한 기기 수 변경 이력입니다.
+관리자가 승인한 기체 수 변경 이력입니다.
 
 | 필드 | 설명 |
 | --- | --- |
 | `id` | 변경 이력 식별자 |
 | `store_game_id` | 변경된 점포-기종 |
-| `total_machine_count` | 승인 후 총 기기 수 |
-| `operational_machine_count` | 승인 후 가동 기기 수 |
+| `total_machine_count` | 승인 후 물리적 전체 기체 수 |
+| `tracked_machine_count` | 승인 후 대기열 추적 대상인 최신 온라인 기체 수 |
+| `active_tracked_machine_count` | 승인 후 현재 가동 중인 추적 대상 기체 수 |
+| `legacy_machine_count` | 승인 후 구버전 또는 업데이트 중단 기체 수 |
 | `source_report_id` | 근거가 된 변경 제보 참조, 직접 검수 시 비어 있을 수 있음 |
 | `approved_by` | 승인 관리자 |
 | `approved_at` | 승인 시각 |
@@ -123,6 +155,7 @@
 | `StoreGame` 1:N `WaitReport` | 기종별 대기 상태 제보 이력을 보관 |
 | `StoreGame` 1:N `MachineChangeReport` | 기기 변화 제보 이력을 보관 |
 | `StoreGame` 1:N `MachineCountRevision` | 승인된 기기 수 변경 이력을 보관 |
+| `MachineChangeReport` 1:N `EvidencePhoto` | 변경 제보에는 하나 이상의 증거 사진을 연결할 수 있음 |
 | `User` 1:N 각 제보/승인 기록 | 책임 추적과 운영 검토에 사용 |
 
 ## 5. 최신 대기 상태 선택 규칙 초안
@@ -144,27 +177,32 @@
 | 입력 | 출처 |
 | --- | --- |
 | 최신 대기 상태 | 최신 유효 `WaitReport` |
-| 가동 기기 수 | 승인된 `StoreGame.operational_machine_count` |
-| 총 기기 수 | 승인된 `StoreGame.total_machine_count` |
+| 추적 대상 기체 수 | 승인된 `StoreGame.tracked_machine_count` |
+| 가동 중 추적 대상 기체 수 | 승인된 `StoreGame.active_tracked_machine_count` |
+
+`total_machine_count`와 `legacy_machine_count`는 상세 화면의 매장 참고 정보로 표시할 수 있으나, 대기열 및 체감 혼잡도 계산 입력에는 사용하지 않습니다. 오프라인 기체도 동일하게 계산에서 제외합니다.
 
 ### 기본 상태 점수
 
 | 대기 상태 | 기본 점수 |
 | --- | --- |
-| `NONE` | 0 |
-| `SHORT` | 1 |
+| `EMPTY` | 0 |
+| `IN_USE_NO_QUEUE` | 0 |
+| `LOW` | 1 |
 | `MEDIUM` | 2 |
-| `LONG` | 3 |
+| `HIGH` | 3 |
+| `VERY_HIGH` | 4 |
+| `UNKNOWN` | 점수 계산 안 함 |
 
-### 가동 감소 보정
+### 추적 대상 기체의 가동 감소 보정
 
-총 기기 수보다 가동 기기 수가 적으면 이용 가능한 회전량이 감소하므로 혼잡도에 보정을 적용합니다.
+추적 대상 기체 수보다 현재 가동 중인 추적 대상 기체 수가 적으면 이용 가능한 회전량이 감소하므로 혼잡도에 보정을 적용합니다.
 
 | 조건 | 보정 초안 |
 | --- | --- |
-| 가동 기기 수가 총 기기 수와 같음 | 보정 없음 |
-| 일부 기기가 미가동 | 기본 점수에 1단계 가산, 최대 단계까지만 반영 |
-| 가동 기기 수가 `0` | 점수 계산 대신 `플레이 불가` 표시 |
+| `active_tracked_machine_count`가 `tracked_machine_count`와 같음 | 보정 없음 |
+| 추적 대상 기체 일부가 미가동 | 기본 점수에 1단계 가산, 최대 단계까지만 반영 |
+| `active_tracked_machine_count`가 `0` | 점수 계산 대신 `플레이 불가` 표시 |
 
 ### 표시 단계 초안
 
@@ -175,11 +213,43 @@
 | 2 | 혼잡 |
 | 3 이상 | 매우 혼잡 |
 | 유효 제보 없음 | 정보 부족 |
-| 가동 기기 없음 | 플레이 불가 |
+| 가동 중인 추적 대상 기체 없음 | 플레이 불가 |
 
-이 계산은 이해하기 쉬운 첫 정책안입니다. 알파 데이터에서 기기 수가 많은 점포의 체감과 맞지 않으면, 가동 기기 수에 따른 세분화 또는 상태 문구 조정을 검토합니다.
+이 계산은 이해하기 쉬운 첫 정책안입니다. 알파 데이터에서 추적 대상 기체 수가 많은 점포의 체감과 맞지 않으면, 가동 중 추적 대상 기체 수에 따른 세분화 또는 상태 문구 조정을 검토합니다.
 
-## 7. 권한 및 변경 규칙
+## 7. 무결성 규칙 초안
+
+| 대상 | 규칙 | 위반 시 처리 초안 |
+| --- | --- | --- |
+| `StoreGame` | `0 <= active_tracked_machine_count <= tracked_machine_count <= total_machine_count` | 관리자 저장 거부 |
+| `StoreGame` | `0 <= legacy_machine_count <= total_machine_count` 및 `tracked_machine_count + legacy_machine_count <= total_machine_count` | 관리자 저장 거부 |
+| `WaitReport` | `queue_level`은 정의된 7개 상태만 저장 가능 | 제보 제출 거부 |
+| `WaitReport` | 작성자는 로그인 이용자여야 함 | 로그인 유도 |
+| `WaitReport` | 동일 이용자의 동일 `StoreGame` 제보는 쿨타임 이후에만 허용 | 남은 시간 안내 |
+| `MachineChangeReport` | 제출 시 증거 사진이 최소 1개 필요 | 접수 거부 |
+| `MachineCountRevision` | 승인 또는 관리자 직접 검수 근거가 필요 | 공개값 변경 거부 |
+
+쿨타임 길이, 제보 만료 시간, 사진 보관 기한은 정책 결정 이슈에서 확정할 값이며 현재 문서에서는 숫자를 고정하지 않습니다.
+
+## 8. 상태 전이 초안
+
+### 기기 변경 제보
+
+| 현재 상태 | 동작 | 다음 상태 | 공개 기체 수 반영 |
+| --- | --- | --- | --- |
+| 없음 | 로그인 이용자가 사진과 함께 제출 | `PENDING` | 없음 |
+| `PENDING` | 관리자가 반려 | `REJECTED` | 없음 |
+| `PENDING` | 관리자가 승인하고 변경 수를 확정 | `APPROVED` | `MachineCountRevision` 생성 후 반영 |
+
+### 대기 상태 노출
+
+| 조건 | 화면 표시 |
+| --- | --- |
+| `active_tracked_machine_count`가 `0` | `플레이 불가` |
+| 유효 기간 내 대기 제보가 있음 | 가장 최근 유효 제보와 계산된 혼잡도 |
+| 유효한 대기 제보가 없음 | `확인 필요`, `정보 부족` |
+
+## 9. 권한 및 변경 규칙
 
 | 작업 | 비로그인 | 로그인 이용자 | 관리자 |
 | --- | --- | --- | --- |
@@ -187,11 +257,21 @@
 | 대기 상태 작성 | 불가 | 가능 | 가능 |
 | 기기 변경 사진 제보 | 불가 | 가능 | 가능 |
 | 점포/기종 등록 | 불가 | 불가 | 가능 |
-| 기기 수 공개값 변경 | 불가 | 불가 | 가능 |
+| 기체 수 공개값 변경 | 불가 | 불가 | 가능 |
 | 변경 제보 승인/반려 | 불가 | 불가 | 가능 |
 | 제보 로그 열람 | 불가 | 본인 기록 범위는 추후 결정 | 가능 |
 
-## 8. 추후 확정할 데이터 정책
+## 10. 이슈와 모델 연결
+
+| 모델 영역 | 먼저 확정할 작업 |
+| --- | --- |
+| 대기 상태와 만료 | `RR-001`, `RR-203`, `RR-204` |
+| 초기 점포/기종/기체 수 | `RR-002`, `RR-103` |
+| 혼잡도 파생값 | `RR-003`, `RR-106` |
+| 사진과 변경 승인 이력 | `RR-004`, `RR-301`, `RR-303` |
+| 로그 및 최소 운영 대응 | `RR-206`, `RR-402` |
+
+## 11. 추후 확정할 데이터 정책
 
 - 이용자 계정 식별 방식과 관리자 권한 부여 방식
 - 대기 상태 제보 쿨타임 및 만료 시간
