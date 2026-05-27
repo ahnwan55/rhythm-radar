@@ -14,7 +14,8 @@
 - 정확한 인원 수 대신 `EMPTY`, `IN_USE_NO_QUEUE`, `LOW`, `MEDIUM`, `HIGH`, `VERY_HIGH`, `UNKNOWN` 구간을 사용합니다.
 - 전체 기체 수와 대기열 추적 대상인 최신 온라인 기체 수, 현재 가동 중인 추적 대상 기체 수는 관리자 검수를 거쳐 관리합니다.
 - 고장 기기 또는 기기 수 변경은 증거 사진 제보 후 관리자 승인을 거쳐 반영합니다.
-- 체감 혼잡도는 검수된 `activeTrackedMachineCount`와 최신 대기 상태를 조합해 계산하며, 구버전·업데이트 중단·오프라인 기체는 계산에서 제외합니다.
+- 체감 혼잡도는 검수된 `activeTrackedMachineCount`와 최신 대기 상태를 조합해 계산하며, 최신 온라인 추적 대상이 아닌 기체는 계산에서 제외합니다.
+- 같은 점포-기종 대기 상태 제보는 직전 제보자가 같은 이용자면 3분, 서로 다른 이용자면 1분 쿨타임을 적용합니다.
 - 알파 단계의 분탕 대응은 로그인, 제보 로그 저장, 제보 쿨타임을 기본으로 합니다.
 
 ## 알파테스트 점포
@@ -30,7 +31,7 @@
 | 부천 P2존 | 경기 부천 |
 | 주안 CPU 게임랜드 | 인천 주안 |
 
-각 점포에서 실제로 표시할 기종과 기체 수는 알파 시작 전 관리자 검수 대상으로 둡니다. 구버전 또는 업데이트 중단 기체가 혼재하면 매장 참고 정보와 `legacyMachineCount`로 표시하되 대기열 계산에는 포함하지 않습니다.
+각 점포에서 실제로 표시할 기종과 기체 수는 알파 시작 전 관리자 검수 대상으로 둡니다. 대기열 추적 포함 여부는 신버전 온라인 업데이트 여부만으로 판단하고, 기체 모델은 수요가 다를 때 화면을 분리하기 위한 표시 정보로 사용합니다.
 
 ## 등록 기준
 
@@ -47,24 +48,26 @@ BEMANI를 취급하지 않더라도 특정 리듬게임에 특화되어 이용�
 | --- | --- |
 | [docs/alpha-scope.md](docs/alpha-scope.md) | 알파 목표, 포함/제외 범위, 운영 정책 |
 | [docs/store-selection-rules.md](docs/store-selection-rules.md) | 점포 등록 및 예외 선정 기준 |
-| [docs/alpha-store-inventory-template.md](docs/alpha-store-inventory-template.md) | 알파 점포별 기종 및 기기 수 검수표 템플릿 |
+| [docs/alpha-store-inventory-template.md](docs/alpha-store-inventory-template.md) | 알파 점포별 기종 및 기체 수 검수표 템플릿 |
+| [docs/alpha-ui-flow.md](docs/alpha-ui-flow.md) | 알파테스트 화면 흐름과 표시 규칙 |
 | [docs/data-model.md](docs/data-model.md) | 개념 데이터 모델과 혼잡도 계산 초안 |
+| [docs/crowd-level-policy.md](docs/crowd-level-policy.md) | 체감 혼잡도 계산 정책 |
 | [docs/mvp-issues.md](docs/mvp-issues.md) | 구현 가능한 크기로 나눈 MVP 이슈 백로그 |
 
 ## 정적 화면 데이터
 
 React 또는 Next.js 화면에서 가져다 쓸 알파 점포 데이터와 타입 초안은 [src/data/alphaStores.ts](src/data/alphaStores.ts)에 있습니다.
 
-- 점포 6곳은 `PENDING_VERIFICATION` 상태로 먼저 등록했습니다.
-- 검수 전인 기종명과 기체 수를 임의로 만들지 않기 위해 현재 `games`는 빈 배열입니다.
-- 기종별 정적 데이터는 `totalMachineCount`, `trackedMachineCount`, `activeTrackedMachineCount`, `legacyMachineCount`를 분리하며, 혼잡도에는 최신 온라인 추적 대상만 사용합니다.
+- 점포 6곳 중 한성대 우리게임장2는 2026-05-27 현장 조사 기준 기종 데이터를 반영했고, 나머지 점포는 `PENDING_VERIFICATION` 상태입니다.
+- 검수 전인 점포의 기종명과 기체 수는 임의로 만들지 않기 위해 `games`를 빈 배열로 유지합니다.
+- 기종별 정적 데이터는 `totalMachineCount`, `trackedMachineCount`, `activeTrackedMachineCount`, `untrackedMachineCount`를 분리하며, 혼잡도에는 최신 온라인 추적 대상만 사용합니다.
 - 대기 단계는 `EMPTY`, `IN_USE_NO_QUEUE`, `LOW`, `MEDIUM`, `HIGH`, `VERY_HIGH`, `UNKNOWN`으로 정의했습니다.
 
 ## 구현 준비 순서
 
 현재 백로그는 코드를 작성하기 위한 약속이 아니라, 구현을 시작할 때 서로 독립적으로 처리 가능한 작업 목록입니다.
 
-1. 대기 상태 유효 시간, 쿨타임, 사진 보관 정책처럼 구현에 영향을 주는 결정값을 확정합니다.
+1. 대기 상태 유효 시간, 사진 보관 정책처럼 구현에 영향을 주는 남은 결정값을 확정합니다.
 2. 점포, 기종, 제보, 기기 변경 승인에 관한 데이터 계약을 고정합니다.
 3. 조회 기능부터 만들고, 로그인 제보와 관리자 검수 기능을 작은 단위로 이어 붙입니다.
 4. 알파 점포 초기 데이터와 운영 점검표가 준비된 뒤에만 알파테스트를 시작합니다.
@@ -75,6 +78,6 @@ React 또는 Next.js 화면에서 가져다 쓸 알파 점포 데이터와 타�
 
 - 상태: 문서화 중
 - 기능 코드: 작성하지 않음
-- 정적 데이터: 화면용 TypeScript 타입과 알파 점포 6곳 초안 작성
-- 준비됨: 알파 범위, 점포 등록 원칙, 개념 데이터 모델, 구현 단위 백로그 초안
+- 정적 데이터: 화면용 TypeScript 타입, 알파 점포 6곳, 한성대 우리게임장2 현장 조사 데이터 작성
+- 준비됨: 알파 범위, 점포 등록 원칙, 개념 데이터 모델, 화면 표시 규칙, 구현 단위 백로그 초안
 - 다음 산출물: 미결정 정책값 확정과 알파 점포별 기종/기체 수 검수 결과

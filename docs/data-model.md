@@ -9,7 +9,8 @@
 - 대기 상태는 사람 수가 아니라 구간형 상태로 저장합니다.
 - 사용자 제보 원본과 현재 화면에 노출할 최신 상태를 구분합니다.
 - 전체 기체 수와 대기열 추적 대상 기체 수는 관리자 승인된 값만 기준 정보로 사용합니다.
-- 대기열과 체감 혼잡도에는 최신 온라인 업데이트가 유지되는 현역 기체만 포함하며, 구버전·업데이트 중단·오프라인 기체는 제외합니다.
+- 대기열과 체감 혼잡도에는 최신 온라인 업데이트가 유지되는 신버전만 포함하며, 기체의 신구 여부 자체는 추적 포함 기준으로 사용하지 않습니다.
+- 신기체와 구기체가 같은 신버전을 가동하더라도 수요가 다를 수 있으면 `MachineGroup`으로 분리해 표시할 수 있습니다.
 - 증거 사진이 필요한 변경 제보와 즉시 반영되는 대기 상태 제보를 분리합니다.
 - 체감 혼잡도는 저장 가능한 입력 데이터에서 계산되는 파생값으로 취급합니다.
 - 악성 사용 대응을 위해 제보 작성자와 시각을 추적할 수 있어야 합니다.
@@ -51,12 +52,12 @@
 | `id` | 기종 식별자 |
 | `name` | 표시 이름 |
 | `series` | BEMANI 등 계열 구분 |
-| `model` | 발키리 모델 등 구체 모델이 필요한 경우의 값 |
-| `online_service_status` | `CURRENT_ONLINE`, `LEGACY_OR_ENDED`, `OFFLINE` 등 추적 대상 여부 검수에 활용할 상태 |
+| `model` | 게임 타이틀 또는 주요 모델 이름. 기체 모델과 혼동하지 않도록 상세 기체 정보는 `MachineGroup`에 기록 |
+| `online_service_status` | 해당 타이틀의 최신 온라인 업데이트 상태 |
 
 ### `StoreGame`
 
-특정 점포에서 제공하는 기종과 검수된 기체 수를 나타냅니다. 최신 온라인 추적 대상 기체가 존재할 때 대기 상태 제보의 대상 단위가 됩니다.
+특정 점포에서 제공하는 기종과 검수된 기체 수 집계를 나타냅니다. 최신 온라인 신버전 추적 대상이 존재할 때 대기 상태 제보의 기본 단위가 됩니다.
 
 | 필드 | 설명 |
 | --- | --- |
@@ -64,13 +65,33 @@
 | `store_id` | 점포 참조 |
 | `game_title_id` | 기종 참조 |
 | `total_machine_count` | 물리적으로 존재하는 관리자 승인 전체 기체 수 |
-| `tracked_machine_count` | 최신 온라인 업데이트가 유지되고 대기열 추적 대상인 기체 수 |
-| `active_tracked_machine_count` | 현재 가동 중인 최신 온라인 추적 대상 기체 수 |
-| `legacy_machine_count` | 구버전 또는 업데이트 중단으로 계산에서 제외하는 기체 수 |
+| `tracked_machine_count` | 최신 온라인 업데이트가 유지되는 신버전 가동 기체 수 |
+| `active_tracked_machine_count` | 현재 가동 중인 신버전 추적 대상 기체 수 |
+| `untracked_machine_count` | 구버전, 업데이트 중단, 오프라인 등으로 계산에서 제외하는 기체 수 |
 | `machine_count_reviewed_at` | 기체 수 최근 승인 시각 |
 | `status` | 제보 허용 여부를 포함한 운영 상태 |
 
-오프라인 기체는 `total_machine_count`에는 포함할 수 있으나 `tracked_machine_count`와 `active_tracked_machine_count`에는 포함하지 않습니다. 구버전 또는 업데이트 중단 기체가 최신 기체와 혼재하면 `legacy_machine_count`와 화면의 `notes`에 참고 정보로 기록합니다.
+오프라인 기체는 `total_machine_count`에는 포함할 수 있으나 `tracked_machine_count`와 `active_tracked_machine_count`에는 포함하지 않습니다. 추적 제외 기체가 최신 온라인 추적 대상 기체와 혼재하면 `untracked_machine_count`와 화면의 `notes`에 참고 정보로 기록합니다.
+
+### `MachineGroup`
+
+같은 기종 안에서 기체 모델과 소프트웨어/서비스 버전이 나뉘는 경우를 기록하는 검수 단위입니다. 추적 포함 여부는 오직 소프트웨어/서비스 버전이 최신 온라인 업데이트 대상인지로 판단합니다. 기체가 신형인지 구형인지는 추적 포함 기준이 아니며, 이용자 수요가 다를 때 화면을 분리하기 위한 표시 기준입니다.
+
+| 필드 | 설명 |
+| --- | --- |
+| `id` | 기체/버전 그룹 식별자 |
+| `store_game_id` | 점포-기종 참조 |
+| `cabinet_model` | 발키리 모델, 구기체 등 기체 모델 또는 현장 식별명 |
+| `software_version` | 사운드볼텍스 나블라, 익시드 기어 등 가동 버전 |
+| `machine_count` | 해당 그룹의 물리 기체 수 |
+| `active_machine_count` | 해당 그룹에서 현재 가동 중인 기체 수 |
+| `service_status` | `CURRENT_VERSION_ONLINE`, `OLD_VERSION_OR_UPDATE_ENDED`, `OFFLINE`, `UNKNOWN` |
+| `is_queue_tracked` | 대기열과 체감 혼잡도 계산에 포함하는지 여부 |
+| `queue_level` | 해당 그룹의 대기 상태. 그룹별 수요가 다르면 별도로 제보 받음 |
+| `last_reported_at` | 해당 그룹의 최근 제보 시각 |
+| `note` | 검수 메모 |
+
+예를 들어 사운드볼텍스에서 발키리 모델이 최신 버전인 나블라를 가동하면 `is_queue_tracked = true`로 기록합니다. 구기체가 이전 버전인 익시드 기어를 가동하면 매장 참고 정보로 남길 수 있지만 `is_queue_tracked = false`로 기록합니다. 반대로 기타도라나 beatmania IIDX처럼 신기체와 구기체가 모두 같은 최신 온라인 버전을 지원하는 경우에는 둘 다 `is_queue_tracked = true`가 될 수 있으며, 수요가 다르면 서로 다른 `MachineGroup`으로 분리합니다. 팝픈뮤직처럼 신기체에만 신버전이 선행 적용되는 기간에는 신버전 신기체 그룹만 추적 대상이 되고, 이전 버전을 가동하는 구기체 그룹은 해당 신버전 대기열 계산에서 제외합니다.
 
 ### `AlphaStore` / `AlphaGame`
 
@@ -79,7 +100,9 @@
 | 타입 | 필드 |
 | --- | --- |
 | `AlphaStore` | `id`, `name`, `region`, `area`, `status`, `notes`, `games` |
-| `AlphaGame` | `title`, `totalMachineCount`, `trackedMachineCount`, `activeTrackedMachineCount`, `legacyMachineCount`, `queueLevel`, `lastReportedAt`, `lastVerifiedAt` |
+| `AlphaGame` | `title`, `totalMachineCount`, `trackedMachineCount`, `activeTrackedMachineCount`, `untrackedMachineCount`, `machineGroups`, `queueLevel`, `lastReportedAt`, `lastVerifiedAt` |
+
+`AlphaGame.queueLevel`은 기종 단위 요약 또는 단일 추적 그룹의 표시값입니다. 같은 기종 안에서 신기체/구기체 등 수요가 다른 추적 그룹을 분리할 때는 `machineGroups[].queueLevel`과 `machineGroups[].activeMachineCount`를 우선 사용합니다.
 
 초기 `alphaStores` 데이터는 점포 6곳만 포함하며, 기종 검수 전에는 각 점포의 `games`를 빈 배열로 유지합니다.
 
@@ -91,6 +114,7 @@
 | --- | --- |
 | `id` | 제보 식별자 |
 | `store_game_id` | 제보 대상 점포-기종 |
+| `machine_group_id` | 수요가 분리되는 기체/버전 그룹 대상. 기종 단위 제보면 비워둘 수 있음 |
 | `reporter_user_id` | 작성 이용자 |
 | `queue_level` | `EMPTY`, `IN_USE_NO_QUEUE`, `LOW`, `MEDIUM`, `HIGH`, `VERY_HIGH`, `UNKNOWN` |
 | `created_at` | 제보 시각 |
@@ -140,7 +164,7 @@
 | `total_machine_count` | 승인 후 물리적 전체 기체 수 |
 | `tracked_machine_count` | 승인 후 대기열 추적 대상인 최신 온라인 기체 수 |
 | `active_tracked_machine_count` | 승인 후 현재 가동 중인 추적 대상 기체 수 |
-| `legacy_machine_count` | 승인 후 구버전 또는 업데이트 중단 기체 수 |
+| `untracked_machine_count` | 승인 후 계산에서 제외하는 기체 수 |
 | `source_report_id` | 근거가 된 변경 제보 참조, 직접 검수 시 비어 있을 수 있음 |
 | `approved_by` | 승인 관리자 |
 | `approved_at` | 승인 시각 |
@@ -153,6 +177,7 @@
 | `Store` 1:N `StoreGame` | 점포는 여러 기종을 운영할 수 있음 |
 | `GameTitle` 1:N `StoreGame` | 동일 기종은 여러 점포에 존재할 수 있음 |
 | `StoreGame` 1:N `WaitReport` | 기종별 대기 상태 제보 이력을 보관 |
+| `StoreGame` 1:N `MachineGroup` | 기체 모델과 소프트웨어/서비스 버전별 검수 정보를 보관 |
 | `StoreGame` 1:N `MachineChangeReport` | 기기 변화 제보 이력을 보관 |
 | `StoreGame` 1:N `MachineCountRevision` | 승인된 기기 수 변경 이력을 보관 |
 | `MachineChangeReport` 1:N `EvidencePhoto` | 변경 제보에는 하나 이상의 증거 사진을 연결할 수 있음 |
@@ -177,10 +202,10 @@
 | 입력 | 출처 |
 | --- | --- |
 | 최신 대기 상태 | 최신 유효 `WaitReport` |
-| 추적 대상 기체 수 | 승인된 `StoreGame.tracked_machine_count` |
-| 가동 중 추적 대상 기체 수 | 승인된 `StoreGame.active_tracked_machine_count` |
+| 추적 대상 기체 수 | 승인된 `StoreGame.tracked_machine_count` 또는 분리 표시 시 `MachineGroup.machine_count` |
+| 가동 중 추적 대상 기체 수 | 승인된 `StoreGame.active_tracked_machine_count` 또는 분리 표시 시 `MachineGroup.active_machine_count` |
 
-`total_machine_count`와 `legacy_machine_count`는 상세 화면의 매장 참고 정보로 표시할 수 있으나, 대기열 및 체감 혼잡도 계산 입력에는 사용하지 않습니다. 오프라인 기체도 동일하게 계산에서 제외합니다.
+`total_machine_count`와 `untracked_machine_count`는 상세 화면의 매장 참고 정보로 표시할 수 있으나, 대기열 및 체감 혼잡도 계산 입력에는 사용하지 않습니다. 오프라인 기체도 동일하게 계산에서 제외합니다.
 
 ### 기본 상태 점수
 
@@ -222,14 +247,17 @@
 | 대상 | 규칙 | 위반 시 처리 초안 |
 | --- | --- | --- |
 | `StoreGame` | `0 <= active_tracked_machine_count <= tracked_machine_count <= total_machine_count` | 관리자 저장 거부 |
-| `StoreGame` | `0 <= legacy_machine_count <= total_machine_count` 및 `tracked_machine_count + legacy_machine_count <= total_machine_count` | 관리자 저장 거부 |
+| `StoreGame` | `0 <= untracked_machine_count <= total_machine_count` 및 `tracked_machine_count + untracked_machine_count <= total_machine_count` | 관리자 저장 거부 |
+| `MachineGroup` | `service_status = CURRENT_VERSION_ONLINE`인 그룹만 `is_queue_tracked = true` 가능 | 관리자 저장 거부 |
+| `MachineGroup` | `is_queue_tracked = true`인 그룹만 `tracked_machine_count`와 `active_tracked_machine_count` 집계에 포함 | 관리자 저장 거부 |
 | `WaitReport` | `queue_level`은 정의된 7개 상태만 저장 가능 | 제보 제출 거부 |
 | `WaitReport` | 작성자는 로그인 이용자여야 함 | 로그인 유도 |
-| `WaitReport` | 동일 이용자의 동일 `StoreGame` 제보는 쿨타임 이후에만 허용 | 남은 시간 안내 |
+| `WaitReport` | 동일 이용자의 동일 `StoreGame` 제보는 직전 제보 후 3분이 지나야 작성 가능 | 남은 시간 안내 |
+| `WaitReport` | 다른 이용자라도 동일 `StoreGame`의 직전 제보 후 1분이 지나야 작성 가능 | 남은 시간 안내 |
 | `MachineChangeReport` | 제출 시 증거 사진이 최소 1개 필요 | 접수 거부 |
 | `MachineCountRevision` | 승인 또는 관리자 직접 검수 근거가 필요 | 공개값 변경 거부 |
 
-쿨타임 길이, 제보 만료 시간, 사진 보관 기한은 정책 결정 이슈에서 확정할 값이며 현재 문서에서는 숫자를 고정하지 않습니다.
+대기 상태 제보 쿨타임은 동일 이용자의 같은 `StoreGame` 반복 제보 3분, 서로 다른 이용자의 같은 `StoreGame` 연속 제보 1분으로 고정합니다. 두 값은 제보 갱신 단위이며, `expires_at`에 적용할 최신 제보 만료 시간과 사진 보관 기한은 별도 정책 결정 이슈에서 확정합니다.
 
 ## 8. 상태 전이 초안
 
@@ -274,7 +302,7 @@
 ## 11. 추후 확정할 데이터 정책
 
 - 이용자 계정 식별 방식과 관리자 권한 부여 방식
-- 대기 상태 제보 쿨타임 및 만료 시간
+- 대기 상태 제보 만료 시간
 - 증거 사진 저장 위치, 보관 기간, 삭제 정책
 - 사진 내 얼굴 또는 개인정보 노출 대응 방식
 - 관리자에 의한 대기 제보 숨김 또는 사용자 제한 기록 방식
