@@ -11,6 +11,7 @@
 - 전체 기체 수와 대기열 추적 대상 기체 수는 관리자 승인된 값만 기준 정보로 사용합니다.
 - 대기열과 체감 혼잡도에는 최신 온라인 업데이트가 유지되는 신버전만 포함하며, 기체의 신구 여부 자체는 추적 포함 기준으로 사용하지 않습니다.
 - 신기체와 구기체가 같은 신버전을 가동하더라도 수요가 다를 수 있으면 `MachineGroup`으로 분리해 표시할 수 있습니다.
+- 기타도라처럼 신기체와 구기체 사이에 마이너 버전 차이가 있으면 알파에서는 최신 버전이 확인된 아레나 모델만 추적하고, 구기체는 참고 정보로 분리합니다.
 - 증거 사진이 필요한 변경 제보와 즉시 반영되는 대기 상태 제보를 분리합니다.
 - 체감 혼잡도는 저장 가능한 입력 데이터에서 계산되는 파생값으로 취급합니다.
 - 악성 사용 대응을 위해 제보 작성자와 시각을 추적할 수 있어야 합니다.
@@ -85,13 +86,13 @@
 | `software_version` | 사운드볼텍스 나블라, 익시드 기어 등 가동 버전 |
 | `machine_count` | 해당 그룹의 물리 기체 수 |
 | `active_machine_count` | 해당 그룹에서 현재 가동 중인 기체 수 |
-| `service_status` | `CURRENT_VERSION_ONLINE`, `OLD_VERSION_OR_UPDATE_ENDED`, `OFFLINE`, `UNKNOWN` |
+| `service_status` | `CURRENT_VERSION_ONLINE`, `MINOR_VERSION_DIFFERENCE`, `OLD_VERSION_OR_UPDATE_ENDED`, `OFFLINE`, `UNKNOWN` |
 | `is_queue_tracked` | 대기열과 체감 혼잡도 계산에 포함하는지 여부 |
 | `queue_level` | 해당 그룹의 대기 상태. 그룹별 수요가 다르면 별도로 제보 받음 |
 | `last_reported_at` | 해당 그룹의 최근 제보 시각 |
 | `note` | 검수 메모 |
 
-예를 들어 사운드볼텍스에서 발키리 모델이 최신 버전인 나블라를 가동하면 `is_queue_tracked = true`로 기록합니다. 구기체가 이전 버전인 익시드 기어를 가동하면 매장 참고 정보로 남길 수 있지만 `is_queue_tracked = false`로 기록합니다. 반대로 기타도라나 beatmania IIDX처럼 신기체와 구기체가 모두 같은 최신 온라인 버전을 지원하는 경우에는 둘 다 `is_queue_tracked = true`가 될 수 있으며, 수요가 다르면 서로 다른 `MachineGroup`으로 분리합니다. 팝픈뮤직처럼 신기체에만 신버전이 선행 적용되는 기간에는 신버전 신기체 그룹만 추적 대상이 되고, 이전 버전을 가동하는 구기체 그룹은 해당 신버전 대기열 계산에서 제외합니다.
+예를 들어 사운드볼텍스에서 발키리 모델이 최신 버전인 나블라를 가동하면 `is_queue_tracked = true`로 기록합니다. 구기체가 이전 버전인 익시드 기어를 가동하면 매장 참고 정보로 남길 수 있지만 `is_queue_tracked = false`로 기록합니다. 반대로 beatmania IIDX처럼 신기체와 구기체가 모두 같은 최신 온라인 버전을 지원하는 경우에는 둘 다 `is_queue_tracked = true`가 될 수 있으며, 수요가 다르면 서로 다른 `MachineGroup`으로 분리합니다. 기타도라처럼 아레나 모델과 구기체 사이에 마이너 버전 차이가 있으면 알파 단계에서는 아레나 모델만 추적 대상이 되고, 구기체는 `MINOR_VERSION_DIFFERENCE` 참고 정보로 기록합니다. 팝픈뮤직처럼 신기체에만 신버전이 선행 적용되는 기간에는 신버전 신기체 그룹만 추적 대상이 되고, 이전 버전을 가동하는 구기체 그룹은 해당 신버전 대기열 계산에서 제외합니다.
 
 ### `AlphaStore` / `AlphaGame`
 
@@ -249,6 +250,7 @@
 | `StoreGame` | `0 <= active_tracked_machine_count <= tracked_machine_count <= total_machine_count` | 관리자 저장 거부 |
 | `StoreGame` | `0 <= untracked_machine_count <= total_machine_count` 및 `tracked_machine_count + untracked_machine_count <= total_machine_count` | 관리자 저장 거부 |
 | `MachineGroup` | `service_status = CURRENT_VERSION_ONLINE`인 그룹만 `is_queue_tracked = true` 가능 | 관리자 저장 거부 |
+| `MachineGroup` | `service_status = MINOR_VERSION_DIFFERENCE`인 그룹은 알파 단계에서 `is_queue_tracked = false`로 둠 | 관리자 저장 거부 |
 | `MachineGroup` | `is_queue_tracked = true`인 그룹만 `tracked_machine_count`와 `active_tracked_machine_count` 집계에 포함 | 관리자 저장 거부 |
 | `WaitReport` | `queue_level`은 정의된 7개 상태만 저장 가능 | 제보 제출 거부 |
 | `WaitReport` | 작성자는 로그인 이용자여야 함 | 로그인 유도 |
