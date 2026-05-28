@@ -40,7 +40,7 @@
 | `region` | 서울, 경기, 인천 등 권역 |
 | `location_text` | 주소 또는 위치 안내 |
 | `registration_type` | `STANDARD` 또는 `EXCEPTION` |
-| `status` | `ACTIVE`, `HIDDEN` 등 공개 상태 |
+| `status` | `ACTIVE`, `PENDING_VERIFICATION`, `DEFERRED`, `HIDDEN` 등 공개 상태 |
 | `reviewed_at` | 최근 관리자 검수 시각 |
 
 ### `GameTitle`
@@ -104,7 +104,7 @@
 
 `AlphaGame.queueLevel`은 기종 단위 요약 또는 단일 추적 그룹의 표시값입니다. 같은 기종 안에서 신기체/구기체 등 수요가 다른 추적 그룹을 분리할 때는 `machineGroups[].queueLevel`과 `machineGroups[].activeMachineCount`를 우선 사용합니다.
 
-초기 `alphaStores` 데이터는 점포 6곳만 포함하며, 기종 검수 전에는 각 점포의 `games`를 빈 배열로 유지합니다.
+초기 `alphaStores` 데이터는 알파 1차 점포 5곳과 확장 후보 1곳을 포함합니다. 기종 검수 전에는 각 점포의 `games`를 빈 배열로 유지하며, `DEFERRED` 상태인 확장 후보는 알파 1차 검수 완료 조건에 포함하지 않습니다.
 
 ### `WaitReport`
 

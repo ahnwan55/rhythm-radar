@@ -13,6 +13,7 @@ export type QueueLevel = (typeof QUEUE_LEVELS)[number];
 export const STORE_STATUSES = [
   "PENDING_VERIFICATION",
   "ACTIVE",
+  "DEFERRED",
   "HIDDEN",
 ] as const;
 
@@ -75,7 +76,10 @@ export const QUEUE_LEVEL_LABELS: Record<QueueLevel, string> = {
 };
 
 const PENDING_VERIFICATION_NOTE =
-  "알파 대상 점포입니다. 표시 기종과 분류별 기체 수는 관리자 검수 후 추가됩니다.";
+  "알파 1차 대상 점포입니다. 표시 기종과 분류별 기체 수는 관리자 검수 후 추가됩니다.";
+
+const DEFERRED_EXPANSION_NOTE =
+  "인천권 주요 리듬게임 점포로 확장 후보에 둡니다. 알파 1차에서는 운영자 직접 검수 가능 범위를 서울·부천권으로 제한하기 위해 보류합니다.";
 
 const HANSUNG_VERIFIED_AT = "2026-05-27";
 const HANSUNG_CURRENT_VERSION_NOTE =
@@ -449,8 +453,8 @@ export const alphaStores: readonly AlphaStore[] = [
     name: "주안 CPU 게임랜드",
     region: "인천",
     area: "주안",
-    status: "PENDING_VERIFICATION",
-    notes: PENDING_VERIFICATION_NOTE,
+    status: "DEFERRED",
+    notes: DEFERRED_EXPANSION_NOTE,
     games: [],
   },
 ];
