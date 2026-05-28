@@ -35,7 +35,7 @@ flowchart TD
 | 점포명 | `AlphaStore.name`을 그대로 표시 |
 | 지역 | `region`과 `area`를 함께 표시 |
 | 점포 상태 | `PENDING_VERIFICATION`이면 `기종 검수 중`으로 표시 |
-| 점포 상태 | `DEFERRED`이면 `확장 후보 / 1차 보류`로 표시 |
+| 점포 상태 | `PLANNED_ALPHA_2`이면 `알파 2차 예정`으로 표시 |
 | 점포 비고 | `notes`가 있으면 보조 문구로 표시 |
 | 기종 목록 | `games`가 비어 있으면 `아직 검수된 기종이 없습니다` 표시 |
 | 새로고침 안내 | 정적 데이터 단계에서는 `실시간 정보가 아닙니다` 안내 표시 |
@@ -46,7 +46,7 @@ flowchart TD
 
 ### 목적
 
-알파 1차 대상 점포 5곳을 한눈에 보여주고, 이용자가 관심 있는 점포 상세로 이동할 수 있게 합니다. 확장 후보 점포는 기본 목록과 분리하거나 보류 배지를 붙여 표시합니다.
+알파 1차 대상 점포 5곳을 한눈에 보여주고, 이용자가 관심 있는 점포 상세로 이동할 수 있게 합니다. 알파 2차 예정 점포는 기본 목록과 분리하거나 예정 배지를 붙여 표시합니다.
 
 ### 카드 구성
 
@@ -65,7 +65,7 @@ flowchart TD
 | `games.length === 0` | `기종 검수 중`과 `아직 표시할 기종이 없습니다` |
 | 검수된 기종이 있으나 모두 `UNKNOWN` | `정보 부족` |
 | 하나 이상 계산 가능한 기종 있음 | 가장 높은 체감 혼잡도 또는 기종 수 요약 |
-| 점포 `status`가 `DEFERRED` | `확장 후보 / 1차 보류`로 표시하고 혼잡도 요약은 숨김 |
+| 점포 `status`가 `PLANNED_ALPHA_2` | `알파 2차 예정`으로 표시하고 혼잡도 요약은 숨김 |
 | 점포 `status`가 `HIDDEN` | 공개 목록에서 제외 |
 
 알파 초기에는 알파 1차 점포 대부분이 `PENDING_VERIFICATION`일 수 있으므로, 목록 화면은 빈 화면처럼 보이지 않게 점포명과 검수 안내를 우선 노출합니다.
@@ -83,7 +83,7 @@ flowchart TD
 | 점포명 | `name` |
 | 위치 | `region`, `area` |
 | 점포 상태 | `PENDING_VERIFICATION`이면 `알파 대상 / 기종 검수 중` |
-| 점포 상태 | `DEFERRED`이면 `확장 후보 / 알파 1차 보류` |
+| 점포 상태 | `PLANNED_ALPHA_2`이면 `알파 2차 예정` |
 | 안내 | `notes` |
 
 ### 기종 카드
@@ -104,6 +104,21 @@ flowchart TD
 | 마지막 검수 | `lastVerifiedAt` 또는 `검수 전` |
 
 `untrackedMachineCount`가 `1` 이상이면 `신버전 온라인 추적 대상이 아닌 기체는 대기열 계산에서 제외됩니다` 안내를 표시합니다. 사운드볼텍스처럼 발키리 모델은 최신 버전, 구기체는 이전 버전으로 나뉘는 경우 `machineGroups`에 기체 모델과 소프트웨어/서비스 버전을 함께 표시합니다. beatmania IIDX처럼 신기체와 구기체가 모두 같은 신버전을 가동하면 둘 다 추적 대상이지만, 수요 차이가 있으면 그룹을 분리해 표시합니다. 기타도라처럼 아레나 모델과 구기체 사이에 마이너 버전 차이가 있으면 알파에서는 아레나 모델만 추적 대상이고 구기체는 참고 정보로 표시합니다. 팝픈뮤직처럼 신기체에만 신버전이 선행 적용되는 기간에는 신버전 신기체 그룹만 추적 대상이고 이전 버전 구기체는 참고 정보로 표시합니다.
+
+### 기종 정렬
+
+점포 상세의 기종 카드는 [crowd-level-policy.md](crowd-level-policy.md)의 수요 및 표시 우선순위 등급을 따릅니다.
+
+| 정렬 등급 | 표시 규칙 |
+| --- | --- |
+| `PINNED_TOP` | 최상단 고정 |
+| `HIGH` | 최상단 아래 |
+| `MEDIUM` | 기본 위치 |
+| `LOWER_MEDIUM` | 기본보다 약간 아래 |
+| `MEDIUM_LOW` | 기본보다 아래 |
+| `PINNED_BOTTOM` | 최하단 고정 |
+
+같은 등급 안에서는 정적 데이터 입력 순서를 유지합니다. beatmania IIDX처럼 기체 그룹별 수요가 다르면 기종 카드 안에서 라이트닝 모델을 디럭스 모델보다 먼저 표시할 수 있습니다.
 
 ### 검수 전 상세
 
@@ -161,7 +176,7 @@ flowchart TD
 | `untrackedMachineCount` | 상세 보조 정보 및 notes | 제외 |
 | `machineGroups` | 기체 모델과 소프트웨어/서비스 버전별 상세 | `isQueueTracked`가 참인 그룹만 집계에 포함 |
 
-`activeTrackedMachineCount`만 체감 혼잡도 계산에 사용합니다. 전체 기체 수가 많아도 신버전 온라인 가동 기체가 적으면 낮은 혼잡도로 완화하지 않습니다. 그룹별 수요를 분리한 경우에는 `machineGroups[].activeMachineCount`와 `machineGroups[].queueLevel`을 우선 사용합니다.
+`activeTrackedMachineCount`만 체감 혼잡도 계산에 사용합니다. 전체 기체 수가 많아도 신버전 온라인 가동 기체가 적으면 낮은 혼잡도로 완화하지 않습니다. 그룹별 수요를 분리한 경우에는 `machineGroups[].activeMachineCount`와 `machineGroups[].queueLevel`을 우선 사용합니다. 알파 단계에서 `isQueueTracked`가 참일 수 있는 그룹 상태는 `CURRENT_VERSION_ONLINE`뿐입니다.
 
 ## 10. 제보 진입 표시
 

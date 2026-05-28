@@ -41,7 +41,7 @@
 | `region` | 서울, 경기, 인천 등 권역 |
 | `location_text` | 주소 또는 위치 안내 |
 | `registration_type` | `STANDARD` 또는 `EXCEPTION` |
-| `status` | `ACTIVE`, `PENDING_VERIFICATION`, `DEFERRED`, `HIDDEN` 등 공개 상태 |
+| `status` | `ACTIVE`, `PENDING_VERIFICATION`, `PLANNED_ALPHA_2`, `HIDDEN` 등 공개 상태 |
 | `reviewed_at` | 최근 관리자 검수 시각 |
 
 ### `GameTitle`
@@ -92,6 +92,18 @@
 | `last_reported_at` | 해당 그룹의 최근 제보 시각 |
 | `note` | 검수 메모 |
 
+#### `service_status` 판정 기준
+
+| 상태 | 의미 | 알파 계산 포함 |
+| --- | --- | --- |
+| `CURRENT_VERSION_ONLINE` | 리듬레이더가 추적하려는 최신 온라인 버전이며 현장에서 플레이 가능한 상태 | 포함 가능 |
+| `MINOR_VERSION_DIFFERENCE` | 온라인 플레이는 가능하지만 추적 기준 최신 버전 또는 대표 모델과 마이너 버전 차이가 있어 같은 대기열로 묶기 애매한 상태 | 제외 |
+| `OLD_VERSION_OR_UPDATE_ENDED` | 명확히 이전 버전이거나 최신 업데이트 대상이 아닌 상태 | 제외 |
+| `OFFLINE` | 전원 꺼짐, 고장, 네트워크 불가, 장기 미가동 등으로 플레이할 수 없는 상태 | 제외 |
+| `UNKNOWN` | 현장에서 버전 또는 가동 상태를 확정하지 못한 상태 | 제외 |
+
+알파 단계에서 `is_queue_tracked = true`가 될 수 있는 상태는 `CURRENT_VERSION_ONLINE`뿐입니다. 최신 버전 기체가 일시적으로 미가동이면 `tracked_machine_count`에는 남길 수 있으나 `active_tracked_machine_count`에서는 제외합니다. 구버전 또는 참고 기체가 미가동이면 `untracked_machine_count`에는 포함하고 해당 `MachineGroup.active_machine_count`만 줄입니다.
+
 예를 들어 사운드볼텍스에서 발키리 모델이 최신 버전인 나블라를 가동하면 `is_queue_tracked = true`로 기록합니다. 구기체가 이전 버전인 익시드 기어를 가동하면 매장 참고 정보로 남길 수 있지만 `is_queue_tracked = false`로 기록합니다. 반대로 beatmania IIDX처럼 신기체와 구기체가 모두 같은 최신 온라인 버전을 지원하는 경우에는 둘 다 `is_queue_tracked = true`가 될 수 있으며, 수요가 다르면 서로 다른 `MachineGroup`으로 분리합니다. 기타도라처럼 아레나 모델과 구기체 사이에 마이너 버전 차이가 있으면 알파 단계에서는 아레나 모델만 추적 대상이 되고, 구기체는 `MINOR_VERSION_DIFFERENCE` 참고 정보로 기록합니다. 팝픈뮤직처럼 신기체에만 신버전이 선행 적용되는 기간에는 신버전 신기체 그룹만 추적 대상이 되고, 이전 버전을 가동하는 구기체 그룹은 해당 신버전 대기열 계산에서 제외합니다.
 
 ### `AlphaStore` / `AlphaGame`
@@ -105,7 +117,9 @@
 
 `AlphaGame.queueLevel`은 기종 단위 요약 또는 단일 추적 그룹의 표시값입니다. 같은 기종 안에서 신기체/구기체 등 수요가 다른 추적 그룹을 분리할 때는 `machineGroups[].queueLevel`과 `machineGroups[].activeMachineCount`를 우선 사용합니다.
 
-초기 `alphaStores` 데이터는 알파 1차 점포 5곳과 확장 후보 1곳을 포함합니다. 기종 검수 전에는 각 점포의 `games`를 빈 배열로 유지하며, `DEFERRED` 상태인 확장 후보는 알파 1차 검수 완료 조건에 포함하지 않습니다.
+향후 화면 구현에서는 기종별 수요와 표시 순서를 위해 `demandPriority` 같은 필드를 `AlphaGame` 또는 `AlphaMachineGroup`에 둘 수 있습니다. 알파 정책 초안의 등급은 `PINNED_TOP`, `HIGH`, `MEDIUM`, `LOWER_MEDIUM`, `MEDIUM_LOW`, `PINNED_BOTTOM`이며, 정확한 기준은 [crowd-level-policy.md](crowd-level-policy.md)를 따릅니다.
+
+초기 `alphaStores` 데이터는 알파 1차 점포 5곳과 알파 2차 예정 점포 1곳을 포함합니다. 기종 검수 전에는 각 점포의 `games`를 빈 배열로 유지하며, `PLANNED_ALPHA_2` 상태인 점포는 알파 1차 검수 완료 조건에 포함하지 않습니다.
 
 ### `WaitReport`
 

@@ -13,7 +13,7 @@ export type QueueLevel = (typeof QUEUE_LEVELS)[number];
 export const STORE_STATUSES = [
   "PENDING_VERIFICATION",
   "ACTIVE",
-  "DEFERRED",
+  "PLANNED_ALPHA_2",
   "HIDDEN",
 ] as const;
 
@@ -79,8 +79,8 @@ export const QUEUE_LEVEL_LABELS: Record<QueueLevel, string> = {
 const PENDING_VERIFICATION_NOTE =
   "알파 1차 대상 점포입니다. 표시 기종과 분류별 기체 수는 관리자 검수 후 추가됩니다.";
 
-const DEFERRED_EXPANSION_NOTE =
-  "인천권 주요 리듬게임 점포로 확장 후보에 둡니다. 알파 1차에서는 운영자 직접 검수 가능 범위를 서울·부천권으로 제한하기 위해 보류합니다.";
+const PLANNED_ALPHA_2_NOTE =
+  "인천권 주요 리듬게임 점포로 알파 2차 테스트 예정입니다. 알파 1차 공개 운영과 검수 완료 조건에는 포함하지 않습니다.";
 
 const HANSUNG_VERIFIED_AT = "2026-05-27";
 const HANSUNG_CURRENT_VERSION_NOTE =
@@ -96,6 +96,10 @@ const BUCHEON_P2_CURRENT_VERSION_NOTE =
 
 const BUCHEON_ATTACK_VERIFIED_AT = "2026-05-28";
 const BUCHEON_ATTACK_CURRENT_VERSION_NOTE =
+  "2026-05-28 현장 조사 기준 최신 버전 업데이트 확인. 대기 상태는 아직 제보 전입니다.";
+
+const TAEREUNG_VERIFIED_AT = "2026-05-28";
+const TAEREUNG_CURRENT_VERSION_NOTE =
   "2026-05-28 현장 조사 기준 최신 버전 업데이트 확인. 대기 상태는 아직 제보 전입니다.";
 
 export const alphaStores: readonly AlphaStore[] = [
@@ -395,9 +399,280 @@ export const alphaStores: readonly AlphaStore[] = [
     name: "태릉입구역 비트연구소 T",
     region: "서울",
     area: "태릉입구역",
-    status: "PENDING_VERIFICATION",
-    notes: PENDING_VERIFICATION_NOTE,
-    games: [],
+    status: "ACTIVE",
+    notes:
+      "2026-05-28 현장 조사로 최신 버전 업데이트 기체 수를 확인했습니다. 대기 상태는 아직 제보 전입니다.",
+    games: [
+      {
+        title: "DDR WORLD",
+        totalMachineCount: 1,
+        trackedMachineCount: 1,
+        activeTrackedMachineCount: 1,
+        untrackedMachineCount: 0,
+        queueLevel: "UNKNOWN",
+        machineGroups: [
+          {
+            cabinetModel: "모델 미기록",
+            softwareVersion: "DDR WORLD",
+            machineCount: 1,
+            activeMachineCount: 1,
+            status: "CURRENT_VERSION_ONLINE",
+            isQueueTracked: true,
+            queueLevel: "UNKNOWN",
+            lastReportedAt: null,
+            lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+            notes: TAEREUNG_CURRENT_VERSION_NOTE,
+          },
+        ],
+        lastReportedAt: null,
+        lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+      },
+      {
+        title: "비트매니아 IIDX 33 스파클 샤워",
+        totalMachineCount: 3,
+        trackedMachineCount: 3,
+        activeTrackedMachineCount: 3,
+        untrackedMachineCount: 0,
+        queueLevel: "UNKNOWN",
+        machineGroups: [
+          {
+            cabinetModel: "디럭스 모델 (구기체)",
+            softwareVersion: "비트매니아 IIDX 33 스파클 샤워",
+            machineCount: 2,
+            activeMachineCount: 2,
+            status: "CURRENT_VERSION_ONLINE",
+            isQueueTracked: true,
+            queueLevel: "UNKNOWN",
+            lastReportedAt: null,
+            lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+            notes:
+              "구기체지만 2026-05-28 현장 조사 기준 최신 버전 업데이트 확인. 대기 상태는 아직 제보 전입니다.",
+          },
+          {
+            cabinetModel: "라이트닝 모델 (신기체)",
+            softwareVersion: "비트매니아 IIDX 33 스파클 샤워",
+            machineCount: 1,
+            activeMachineCount: 1,
+            status: "CURRENT_VERSION_ONLINE",
+            isQueueTracked: true,
+            queueLevel: "UNKNOWN",
+            lastReportedAt: null,
+            lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+            notes: TAEREUNG_CURRENT_VERSION_NOTE,
+          },
+        ],
+        lastReportedAt: null,
+        lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+      },
+      {
+        title: "노스텔지어 Op.3",
+        totalMachineCount: 1,
+        trackedMachineCount: 1,
+        activeTrackedMachineCount: 1,
+        untrackedMachineCount: 0,
+        queueLevel: "UNKNOWN",
+        machineGroups: [
+          {
+            cabinetModel: "모델 미기록",
+            softwareVersion: "노스텔지어 Op.3",
+            machineCount: 1,
+            activeMachineCount: 1,
+            status: "CURRENT_VERSION_ONLINE",
+            isQueueTracked: true,
+            queueLevel: "UNKNOWN",
+            lastReportedAt: null,
+            lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+            notes: TAEREUNG_CURRENT_VERSION_NOTE,
+          },
+        ],
+        lastReportedAt: null,
+        lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+      },
+      {
+        title: "유비트 비욘드 디 애비뉴",
+        totalMachineCount: 3,
+        trackedMachineCount: 3,
+        activeTrackedMachineCount: 3,
+        untrackedMachineCount: 0,
+        queueLevel: "UNKNOWN",
+        machineGroups: [
+          {
+            cabinetModel: "모델 미기록",
+            softwareVersion: "유비트 비욘드 디 애비뉴",
+            machineCount: 3,
+            activeMachineCount: 3,
+            status: "CURRENT_VERSION_ONLINE",
+            isQueueTracked: true,
+            queueLevel: "UNKNOWN",
+            lastReportedAt: null,
+            lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+            notes: TAEREUNG_CURRENT_VERSION_NOTE,
+          },
+        ],
+        lastReportedAt: null,
+        lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+      },
+      {
+        title: "사운드 볼텍스 나블라",
+        totalMachineCount: 6,
+        trackedMachineCount: 5,
+        activeTrackedMachineCount: 5,
+        untrackedMachineCount: 1,
+        queueLevel: "UNKNOWN",
+        machineGroups: [
+          {
+            cabinetModel: "발키리 모델 (신기체)",
+            softwareVersion: "사운드 볼텍스 나블라",
+            machineCount: 5,
+            activeMachineCount: 5,
+            status: "CURRENT_VERSION_ONLINE",
+            isQueueTracked: true,
+            queueLevel: "UNKNOWN",
+            lastReportedAt: null,
+            lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+            notes: TAEREUNG_CURRENT_VERSION_NOTE,
+          },
+          {
+            cabinetModel: "구기체",
+            softwareVersion: "사운드 볼텍스 익시드 기어",
+            machineCount: 1,
+            activeMachineCount: 1,
+            status: "OLD_VERSION_OR_UPDATE_ENDED",
+            isQueueTracked: false,
+            queueLevel: "UNKNOWN",
+            lastReportedAt: null,
+            lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+            notes:
+              "2026-05-28 현장 조사 참고 정보. 이전 버전 기체로 대기열 추적에서 제외합니다.",
+          },
+        ],
+        lastReportedAt: null,
+        lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+      },
+      {
+        title: "GITADORA GALAXY WAVE DELTA",
+        totalMachineCount: 2,
+        trackedMachineCount: 0,
+        activeTrackedMachineCount: 0,
+        untrackedMachineCount: 2,
+        queueLevel: "UNKNOWN",
+        machineGroups: [
+          {
+            cabinetModel: "구기체 기타",
+            softwareVersion: "GITADORA GALAXY WAVE DELTA",
+            machineCount: 1,
+            activeMachineCount: 1,
+            status: "MINOR_VERSION_DIFFERENCE",
+            isQueueTracked: false,
+            queueLevel: "UNKNOWN",
+            lastReportedAt: null,
+            lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+            notes:
+              "2026-05-28 현장 조사 참고 정보. 아레나 모델과 마이너 버전 차이가 있어 알파에서는 대기열 추적에서 제외합니다.",
+          },
+          {
+            cabinetModel: "구기체 드럼",
+            softwareVersion: "GITADORA GALAXY WAVE DELTA",
+            machineCount: 1,
+            activeMachineCount: 1,
+            status: "MINOR_VERSION_DIFFERENCE",
+            isQueueTracked: false,
+            queueLevel: "UNKNOWN",
+            lastReportedAt: null,
+            lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+            notes:
+              "2026-05-28 현장 조사 참고 정보. 아레나 모델과 마이너 버전 차이가 있어 알파에서는 대기열 추적에서 제외합니다.",
+          },
+        ],
+        lastReportedAt: null,
+        lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+      },
+      {
+        title: "maimai DX CiRCLE",
+        totalMachineCount: 1,
+        trackedMachineCount: 1,
+        activeTrackedMachineCount: 1,
+        untrackedMachineCount: 0,
+        queueLevel: "UNKNOWN",
+        machineGroups: [
+          {
+            cabinetModel: "모델 미기록",
+            softwareVersion: "maimai DX CiRCLE",
+            machineCount: 1,
+            activeMachineCount: 1,
+            status: "CURRENT_VERSION_ONLINE",
+            isQueueTracked: true,
+            queueLevel: "UNKNOWN",
+            lastReportedAt: null,
+            lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+            notes: TAEREUNG_CURRENT_VERSION_NOTE,
+          },
+        ],
+        lastReportedAt: null,
+        lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+      },
+      {
+        title: "CHUNITHM X-VERSE-X",
+        totalMachineCount: 2,
+        trackedMachineCount: 2,
+        activeTrackedMachineCount: 2,
+        untrackedMachineCount: 0,
+        queueLevel: "UNKNOWN",
+        machineGroups: [
+          {
+            cabinetModel: "모델 미기록",
+            softwareVersion: "CHUNITHM X-VERSE-X",
+            machineCount: 2,
+            activeMachineCount: 2,
+            status: "CURRENT_VERSION_ONLINE",
+            isQueueTracked: true,
+            queueLevel: "UNKNOWN",
+            lastReportedAt: null,
+            lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+            notes: TAEREUNG_CURRENT_VERSION_NOTE,
+          },
+        ],
+        lastReportedAt: null,
+        lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+      },
+      {
+        title: "팝픈뮤직 High☆Cheers!!",
+        totalMachineCount: 3,
+        trackedMachineCount: 1,
+        activeTrackedMachineCount: 1,
+        untrackedMachineCount: 2,
+        queueLevel: "UNKNOWN",
+        machineGroups: [
+          {
+            cabinetModel: "구기체",
+            softwareVersion: "팝픈뮤직 Jam&Fizz",
+            machineCount: 2,
+            activeMachineCount: 2,
+            status: "OLD_VERSION_OR_UPDATE_ENDED",
+            isQueueTracked: false,
+            queueLevel: "UNKNOWN",
+            lastReportedAt: null,
+            lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+            notes:
+              "2026-05-28 현장 조사 참고 정보. High☆Cheers!! 선행 신버전 대상이 아니므로 대기열 추적에서 제외합니다.",
+          },
+          {
+            cabinetModel: "반짝반짝 팝군 모델 (신기체)",
+            softwareVersion: "팝픈뮤직 High☆Cheers!!",
+            machineCount: 1,
+            activeMachineCount: 1,
+            status: "CURRENT_VERSION_ONLINE",
+            isQueueTracked: true,
+            queueLevel: "UNKNOWN",
+            lastReportedAt: null,
+            lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+            notes: TAEREUNG_CURRENT_VERSION_NOTE,
+          },
+        ],
+        lastReportedAt: null,
+        lastVerifiedAt: TAEREUNG_VERIFIED_AT,
+      },
+    ],
   },
   {
     id: "hansung-woori-gamejang-2",
@@ -1349,8 +1624,8 @@ export const alphaStores: readonly AlphaStore[] = [
     name: "주안 CPU 게임랜드",
     region: "인천",
     area: "주안",
-    status: "DEFERRED",
-    notes: DEFERRED_EXPANSION_NOTE,
+    status: "PLANNED_ALPHA_2",
+    notes: PLANNED_ALPHA_2_NOTE,
     games: [],
   },
 ];
