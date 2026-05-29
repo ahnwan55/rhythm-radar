@@ -10,6 +10,7 @@
 
 - 계산 입력은 `queueLevel`과 `activeTrackedMachineCount`입니다.
 - `activeTrackedMachineCount`는 신버전 온라인 업데이트가 유지되며 현재 플레이 가능한 추적 대상 기체 수입니다.
+- `queueLevel`은 작성 후 30분 이내의 유효한 대기 상태 제보만 사용합니다.
 - `totalMachineCount`, `trackedMachineCount`, `untrackedMachineCount`는 매장 정보 또는 검수 정보로 표시할 수 있지만 체감 혼잡도 산정 입력으로 사용하지 않습니다.
 - 구버전, 업데이트 중단 또는 오프라인 기체처럼 신버전 온라인 추적 대상이 아닌 기체는 매장에 존재하더라도 계산에서 제외합니다.
 - 알파에서 계산에 포함할 수 있는 `machineGroups[].status`는 `CURRENT_VERSION_ONLINE`뿐입니다.
@@ -37,9 +38,11 @@
 | --- | --- | --- |
 | `activeTrackedMachineCount`가 `null`이거나 검수되지 않음 | `정보 부족` | 계산 가능한 가동 기체 정보가 없음 |
 | `activeTrackedMachineCount`가 `0` | `플레이 불가` | 체감 혼잡도가 아니라 현재 이용 불가능 상태임 |
+| 최신 대기 상태 제보가 없거나 마지막 제보가 30분을 넘겨 만료됨 | `정보 부족` | 현재 상태로 인정할 수 있는 제보가 없음 |
 | `queueLevel`이 `UNKNOWN` | `정보 부족` | 유효한 최근 대기 상태가 없음 |
 
 `플레이 불가`는 혼잡도 단계가 아니라 운영 상태 안내입니다. 구버전 또는 오프라인 기체가 남아 있더라도 최신 온라인 추적 대상 기체가 가동 중이지 않으면 이 상태를 표시합니다.
+만료된 마지막 제보값은 `n분 전 제보` 참고 정보로 표시할 수 있지만 조합표에는 넣지 않습니다.
 
 ## 5. 조합표
 
@@ -79,7 +82,7 @@
 
 ## 7. 수요 및 표시 우선순위
 
-알파 단계에서는 기종별 실제 플레이어 수와 화면 표시 우선순위를 같은 기본 등급으로 둡니다. 이 등급은 정확한 방문자 수 예측이 아니라, 점포 상세 화면에서 자주 확인할 가능성이 높은 기종을 위로 올리고 혼잡도 보정 방향을 정하기 위한 정책값입니다.
+알파 단계에서는 기종별 실제 플레이어 수와 화면 표시 우선순위를 같은 기본 등급으로 둡니다. 이 등급은 정확한 방문자 수 예측이 아니라, 점포 상세 화면에서 자주 확인할 가능성이 높은 기종을 위로 올리기 위한 정책값입니다.
 
 | 등급 | 의미 | 적용 기종 초안 |
 | --- | --- | --- |
@@ -96,9 +99,11 @@
 - `PINNED_BOTTOM`은 점포 상세의 최하단에 고정합니다.
 - 같은 등급 안에서는 정적 데이터 입력 순서를 유지합니다.
 - beatmania IIDX처럼 같은 게임 안에서 라이트닝 모델과 디럭스 모델의 수요가 다르면 `machineGroups` 단위 우선순위를 둘 수 있습니다.
-- 사운드 볼텍스처럼 최신 버전 그룹과 구버전 참고 그룹이 함께 있으면, 추적 대상인 최신 버전 그룹의 등급만 목록 정렬과 혼잡도 보정에 사용합니다.
+- 사운드 볼텍스처럼 최신 버전 그룹과 구버전 참고 그룹이 함께 있으면, 추적 대상인 최신 버전 그룹의 등급만 목록 정렬에 사용합니다.
 
-혼잡도 보정은 알파 운영 데이터를 보기 전까지 문구를 과격하게 바꾸지 않습니다. 우선은 높은 수요 등급의 기종이 같은 `queueLevel`과 같은 가동 기체 수를 가질 때 더 위에 보이도록 정렬에 반영하고, 실제 제보가 쌓인 뒤 혼잡도 단계 가산 여부를 검토합니다.
+기종별 수요 등급은 알파 단계에서 혼잡도 단계 가산 또는 감산에 사용하지 않습니다. 우선은 높은 수요 등급의 기종이 같은 `queueLevel`과 같은 가동 기체 수를 가질 때 더 위에 보이도록 정렬에만 반영하고, 실제 제보가 쌓인 뒤 혼잡도 단계 보정 여부를 검토합니다.
+
+점포 전체 혼잡도는 알파 단계에서 계산하지 않습니다. 화면에는 기종별 혼잡도와 최근 제보 여부만 표시합니다.
 
 ## 8. TypeScript 초안
 
@@ -144,6 +149,7 @@ const CROWD_LEVEL_LABELS: Record<CrowdLevel, string> = {
 function calculateCrowdLevel(
   queueLevel: QueueLevel,
   activeTrackedMachineCount: number | null,
+  isReportFresh: boolean,
 ): CrowdLevel {
   if (activeTrackedMachineCount === null) {
     return "INSUFFICIENT_INFO";
@@ -151,6 +157,10 @@ function calculateCrowdLevel(
 
   if (activeTrackedMachineCount <= 0) {
     return "UNAVAILABLE";
+  }
+
+  if (!isReportFresh) {
+    return "INSUFFICIENT_INFO";
   }
 
   if (queueLevel === "UNKNOWN") {
@@ -178,4 +188,4 @@ function calculateCrowdLevel(
 }
 ```
 
-기체가 2대인 경우와 3대 이상인 경우는 현재 조합표에서 동일하게 처리합니다. 추후 알파 데이터에서 차이가 확인될 때에만 추가 구간을 함수에 도입합니다.
+기체가 2대인 경우와 3대 이상인 경우는 현재 조합표에서 동일하게 처리합니다. `isReportFresh`는 마지막 제보가 30분 이내인지 나타내는 값입니다. 추후 알파 데이터에서 차이가 확인될 때에만 추가 구간을 함수에 도입합니다.
