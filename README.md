@@ -19,7 +19,7 @@
 - 대기 상태 제보는 30분 동안 최신 정보로 사용하고, 만료 후에는 계산에서 제외하되 마지막 제보값과 시각을 오래된 참고 정보로 표시합니다.
 - 대기 상태 제보에는 사진을 요구하지 않습니다. 사진은 기체 수, 버전, 가동 상태처럼 중요한 기기 정보 변경 제보에만 사용하며 접수 2주 뒤 자동 삭제합니다.
 - `UNKNOWN`은 시스템 표시용 상태이며 일반 이용자 입력값으로 받지 않습니다.
-- 알파 단계의 분탕 대응은 로그인, 제보 로그 저장, 제보 쿨타임을 기본으로 합니다.
+- 알파 단계의 분탕 대응은 로그인, 제보 로그 저장, 제보 쿨타임, 이상 제보 신고, 관리자 검토를 기본으로 합니다.
 
 ## 알파테스트 점포
 
@@ -55,6 +55,8 @@ BEMANI를 취급하지 않더라도 특정 리듬게임에 특화되어 이용�
 | [docs/alpha-store-inventory-template.md](docs/alpha-store-inventory-template.md) | 알파 점포별 기종 및 기체 수 검수표 템플릿 |
 | [docs/alpha-ui-flow.md](docs/alpha-ui-flow.md) | 알파테스트 화면 흐름과 표시 규칙 |
 | [docs/admin-review-flow.md](docs/admin-review-flow.md) | 관리자 검수 화면과 승인 흐름 |
+| [docs/report-moderation-policy.md](docs/report-moderation-policy.md) | 이상 제보 신고와 관리자 검토 정책 |
+| [docs/alpha-operations-checklist.md](docs/alpha-operations-checklist.md) | 알파 일일 운영 점검표 |
 | [docs/data-model.md](docs/data-model.md) | 개념 데이터 모델과 혼잡도 계산 초안 |
 | [docs/crowd-level-policy.md](docs/crowd-level-policy.md) | 체감 혼잡도 계산 정책 |
 | [docs/mvp-issues.md](docs/mvp-issues.md) | 구현 가능한 크기로 나눈 MVP 이슈 백로그 |
@@ -86,4 +88,4 @@ React 또는 Next.js 화면에서 가져다 쓸 알파 점포 데이터와 타�
 - 기능 코드: 작성하지 않음
 - 정적 데이터: 화면용 TypeScript 타입, 알파 1차 점포 5곳 전체, 알파 2차 예정 점포 1곳 현장 조사 데이터 작성
 - 준비됨: 알파 범위, 점포 등록 원칙, 개념 데이터 모델, 화면 표시 규칙, 관리자 검수 흐름, 구현 단위 백로그 초안
-- 다음 산출물: 운영 점검표와 조회 화면 구현 준비
+- 다음 산출물: 조회 화면 구현 준비와 알파 수동 검증 시나리오
