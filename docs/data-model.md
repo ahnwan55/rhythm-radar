@@ -247,7 +247,7 @@
 | 최신 대기 상태 | 작성 후 30분 이내의 최신 유효 `WaitReport` |
 | 가동 중 추적 대상 기체 수 | 승인된 `StoreGame.active_tracked_machine_count` 또는 분리 표시 시 `MachineGroup.active_machine_count` |
 
-`tracked_machine_count`는 검수 맥락과 가동 감소 안내에 사용할 수 있으나, 알파 체감 혼잡도 조합표의 직접 입력은 `active_tracked_machine_count`입니다. `total_machine_count`와 `untracked_machine_count`는 상세 화면의 매장 참고 정보로 표시할 수 있으나, 대기열 및 체감 혼잡도 계산 입력에는 사용하지 않습니다. 오프라인 기체도 동일하게 계산에서 제외합니다.
+`tracked_machine_count`는 검수 맥락과 가동 감소 안내에 사용할 수 있으나, 알파 체감 혼잡도 계산의 직접 입력은 `active_tracked_machine_count`입니다. `total_machine_count`와 `untracked_machine_count`는 상세 화면의 매장 참고 정보로 표시할 수 있으나, 대기열 및 체감 혼잡도 계산 입력에는 사용하지 않습니다. 오프라인 기체도 동일하게 계산에서 제외합니다.
 
 ### 대기 상태 기본 순서
 
@@ -263,13 +263,13 @@
 
 ### 가동 중 추적 대상 기체 수 반영
 
-현재 가동 중인 추적 대상 기체 수가 적으면 이용 가능한 회전량이 감소하므로 같은 대기 상태라도 더 높은 체감 혼잡도로 표시할 수 있습니다. 알파 조합표는 `active_tracked_machine_count`를 1대, 2대, 3대 이상 구간으로 나누되, 현재 정책에서는 2대와 3대 이상을 같은 결과로 처리합니다.
+현재 가동 중인 추적 대상 기체 수가 적으면 이용 가능한 회전량이 감소하므로 같은 대기 상태라도 더 높은 체감 혼잡도로 표시할 수 있습니다. 알파 계산식은 `queue_level`을 대기 압력 범위로 바꾼 뒤 `active_tracked_machine_count`로 나눠 대당 대기 압력을 계산합니다.
 
 | 조건 | 처리 |
 | --- | --- |
 | `active_tracked_machine_count`가 `null` | `정보 부족` |
 | `active_tracked_machine_count`가 `0` | `플레이 불가` |
-| `active_tracked_machine_count`가 `1` 이상이고 유효 제보가 있음 | [crowd-level-policy.md](crowd-level-policy.md)의 조합표 적용 |
+| `active_tracked_machine_count`가 `1` 이상이고 유효 제보가 있음 | [crowd-level-policy.md](crowd-level-policy.md)의 계산식 적용 |
 
 ### 표시 단계
 
